@@ -18,16 +18,17 @@ package org.springframework.cloud.config.server;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
+import static org.springframework.http.MediaType.TEXT_PLAIN;
 
+import java.security.KeyStoreException;
 import java.util.Collections;
 
 import org.junit.Test;
+import org.springframework.cloud.bootstrap.encrypt.KeyProperties;
 import org.springframework.cloud.config.encrypt.KeyFormatException;
 import org.springframework.cloud.config.environment.Environment;
 import org.springframework.cloud.config.environment.PropertySource;
-import org.springframework.cloud.config.server.EncryptionController;
-import org.springframework.cloud.config.server.InvalidCipherException;
-import org.springframework.cloud.config.server.KeyNotInstalledException;
+import org.springframework.core.io.UrlResource;
 import org.springframework.http.MediaType;
 import org.springframework.security.rsa.crypto.RsaSecretEncryptor;
 
@@ -41,37 +42,37 @@ public class EncryptionControllerTests {
 
 	@Test(expected = KeyNotInstalledException.class)
 	public void cannotDecryptWithoutKey() {
-		controller.decrypt("foo", MediaType.TEXT_PLAIN);
+		controller.decrypt("foo", TEXT_PLAIN);
 	}
 
 	@Test(expected = KeyFormatException.class)
 	public void cannotUploadPublicKey() {
-		controller.uploadKey("ssh-rsa ...", MediaType.TEXT_PLAIN);
+		controller.uploadKey("ssh-rsa ...", TEXT_PLAIN);
 	}
 
 	@Test(expected = KeyFormatException.class)
 	public void cannotUploadPublicKeyPemFormat() {
-		controller.uploadKey("---- BEGIN RSA PUBLIC KEY ...", MediaType.TEXT_PLAIN);
+		controller.uploadKey("---- BEGIN RSA PUBLIC KEY ...", TEXT_PLAIN);
 	}
 
 	@Test(expected = InvalidCipherException.class)
 	public void invalidCipher() {
-		controller.uploadKey("foo", MediaType.TEXT_PLAIN);
-		controller.decrypt("foo", MediaType.TEXT_PLAIN);
+		controller.uploadKey("foo", TEXT_PLAIN);
+		controller.decrypt("foo", TEXT_PLAIN);
 	}
 
 	@Test
 	public void sunnyDaySymmetricKey() {
-		controller.uploadKey("foo", MediaType.TEXT_PLAIN);
-		String cipher = controller.encrypt("foo", MediaType.TEXT_PLAIN);
-		assertEquals("foo", controller.decrypt(cipher, MediaType.TEXT_PLAIN));
+		controller.uploadKey("foo", TEXT_PLAIN);
+		String cipher = controller.encrypt("foo", TEXT_PLAIN);
+		assertEquals("foo", controller.decrypt(cipher, TEXT_PLAIN));
 	}
 
 	@Test
 	public void sunnyDayRsaKey() {
 		controller.setEncryptor(new RsaSecretEncryptor());
-		String cipher = controller.encrypt("foo", MediaType.TEXT_PLAIN);
-		assertEquals("foo", controller.decrypt(cipher, MediaType.TEXT_PLAIN));
+		String cipher = controller.encrypt("foo", TEXT_PLAIN);
+		assertEquals("foo", controller.decrypt(cipher, TEXT_PLAIN));
 	}
 
 	@Test
@@ -92,8 +93,8 @@ public class EncryptionControllerTests {
 
 	@Test
 	public void decryptEnvironment() {
-		controller.uploadKey("foo", MediaType.TEXT_PLAIN);
-		String cipher = controller.encrypt("foo", MediaType.TEXT_PLAIN);
+		controller.uploadKey("foo", TEXT_PLAIN);
+		String cipher = controller.encrypt("foo", TEXT_PLAIN);
 		Environment environment = new Environment("foo", "bar");
 		environment.add(new PropertySource("spam", Collections
 				.<Object, Object> singletonMap("my", "{cipher}" + cipher)));
@@ -101,11 +102,46 @@ public class EncryptionControllerTests {
 		assertEquals("foo", result.getPropertySources().get(0).getSource().get("my"));
 	}
 
+    @Test
+    public void shouldDecryptEnvironmentUsingAppropriateEncryptionKey() throws KeyStoreException {
+        // given
+        KeyProperties.KeyStore properties = new KeyProperties.KeyStore();
+        properties.setLocation(new UrlResource(EncryptionControllerTests.class.getClassLoader().getResource("aes-keystore.jck")));
+        properties.setPassword("password");
+        controller.setKeyChain(new KeyChain(properties));
+
+        Environment environment1 = new Environment("name1", "label1");
+        controller.uploadKey("foo", environment1.getApplication(), environment1.getName());
+
+        Environment environment2 = new Environment("name2", "label2");
+        controller.uploadKey("foo", environment2.getApplication(), environment2.getName());
+
+        // when
+        String key = "secret";
+        
+        String secret1 = "secret1";
+        String encrypted1 = controller.encrypt(secret1, environment1);
+        
+        environment1.add(new PropertySource("spam", Collections
+                .<Object, Object> singletonMap(key, "{cipher}" + encrypted1)));
+
+        String secret2 = "secret2";
+        String encrypted2 = controller.encrypt(secret2, environment2);
+        environment2.add(new PropertySource("spam", Collections
+                .<Object, Object> singletonMap(key, "{cipher}" + encrypted2)));
+
+
+        // then
+        assertEquals(secret1, controller.decrypt(environment1).getPropertySources().get(0).getSource().get(key));
+        assertEquals(secret2, controller.decrypt(environment2).getPropertySources().get(0).getSource().get(key));
+    }
+
+
 	@Test
 	public void randomizedCipher() {
-		controller.uploadKey("foo", MediaType.TEXT_PLAIN);
-		String cipher = controller.encrypt("foo", MediaType.TEXT_PLAIN);
-		assertNotEquals(cipher, controller.encrypt("foo", MediaType.TEXT_PLAIN));
+		controller.uploadKey("foo", TEXT_PLAIN);
+		String cipher = controller.encrypt("foo", TEXT_PLAIN);
+		assertNotEquals(cipher, controller.encrypt("foo", TEXT_PLAIN));
 	}
 
 }

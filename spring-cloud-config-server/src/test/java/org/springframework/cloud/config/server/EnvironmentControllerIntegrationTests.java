@@ -32,7 +32,7 @@ import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 public class EnvironmentControllerIntegrationTests {
 
 	private MockMvc mvc;
-	private EnvironmentRepository repository = Mockito.mock(EnvironmentRepository.class);;
+	private EnvironmentRepository repository = Mockito.mock(EnvironmentRepository.class);
 
 	@Before
 	public void init() {

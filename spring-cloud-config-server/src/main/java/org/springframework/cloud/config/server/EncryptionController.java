@@ -65,12 +65,19 @@ public class EncryptionController {
 
 	private TextEncryptor encryptor;
 
+    private KeyChain keyChain;
+
 	@Autowired(required = false)
 	public void setEncryptor(TextEncryptor encryptor) {
 		this.encryptor = encryptor;
 	}
 
-	@RequestMapping(value = "/key", method = RequestMethod.GET)
+    @Autowired
+    public void setKeyChain(KeyChain keyChain) {
+        this.keyChain = keyChain;
+    }
+
+    @RequestMapping(value = "/key", method = RequestMethod.GET)
 	public String getPublicKey() {
 		if (!(encryptor instanceof RsaKeyHolder)) {
 			throw new KeyNotAvailableException();
@@ -114,8 +121,11 @@ public class EncryptionController {
 			body.put("publicKey", ((RsaKeyHolder) encryptor).getPublicKey());
 		}
 		return new ResponseEntity<Map<String, Object>>(body, HttpStatus.CREATED);
-
 	}
+
+    public void uploadKey(String data, String application, String profile) {
+        this.keyChain.add(application + "-" + profile, data);
+    }
 
 	@ExceptionHandler(KeyFormatException.class)
 	@ResponseBody
@@ -152,6 +162,10 @@ public class EncryptionController {
 		data = stripFormData(data, type, false);
 		return encryptor.encrypt(data);
 	}
+
+    public String encrypt(String data, Environment environment) {
+        return new EncryptorFactory().create(keyChain.get(environment)).encrypt(data);
+    }
 
 	@RequestMapping(value = "decrypt", method = RequestMethod.POST)
 	public String decrypt(@RequestBody String data,
@@ -223,7 +237,7 @@ public class EncryptionController {
 	}
 
 	public Environment decrypt(Environment environment) {
-		Environment result = new Environment(environment.getName(),
+        Environment result = new Environment(environment.getName(),
 				environment.getLabel());
 		for (PropertySource source : environment.getPropertySources()) {
 			Map<Object, Object> map = new LinkedHashMap<Object, Object>(
@@ -233,7 +247,8 @@ public class EncryptionController {
 				String name = key.toString();
 				String value = entry.getValue().toString();
 				if (value.startsWith("{cipher}")) {
-					map.remove(key);
+                    TextEncryptor encryptor = new EncryptorFactory().create(keyChain.get(environment));
+                    map.remove(key);
 					if (encryptor == null) {
 						map.put(name, value);
 					}

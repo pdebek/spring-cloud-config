@@ -31,6 +31,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  */
 public class Environment {
+    private String application;
 
 	private String name;
 
@@ -38,13 +39,24 @@ public class Environment {
 
 	private List<PropertySource> propertySources = new ArrayList<PropertySource>();
 
-	@JsonCreator
+
+    @JsonCreator
 	public Environment(@JsonProperty("name") String name,
 			@JsonProperty("label") String label) {
 		super();
 		this.name = name;
 		this.label = label;
 	}
+
+    @JsonCreator
+    public Environment(@JsonProperty("name") String application,
+                       @JsonProperty("name") String name,
+                       @JsonProperty("label") String label) {
+        super();
+        this.application = application;
+        this.name = name;
+        this.label = label;
+    }
 
 	public void add(PropertySource propertySource) {
 		this.propertySources.add(propertySource);
@@ -58,6 +70,10 @@ public class Environment {
 		return propertySources;
 	}
 
+    public String getApplication() {
+        return application;
+    }
+
 	public String getName() {
 		return name;
 	}
@@ -68,8 +84,7 @@ public class Environment {
 
 	@Override
 	public String toString() {
-		return "Environment [name=" + name + ", label=" + label + ", propertySources="
+		return "Environment [application=" + application + ", name=" + name + ", label=" + label + ", propertySources="
 				+ propertySources + "]";
 	}
-
 }
