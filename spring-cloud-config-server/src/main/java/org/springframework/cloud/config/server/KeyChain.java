@@ -12,7 +12,9 @@ import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 
 public class KeyChain {
+
     private KeyStore keyStore;
+    private KeyProperties keyProperties;
 
     public KeyChain(KeyProperties.KeyStore properties) {
         try {
@@ -32,9 +34,21 @@ public class KeyChain {
         }
     }
 
+    public void addDefault(String key) {
+        add(keyProperties.getKeyStore().getAlias(), key);
+    }
+
     public String get(Environment environment) {
         try {
             return keyStore.getKey(environment.getApplication() + "-" + environment.getName(), "password".toCharArray()).toString();
+        } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException e) {
+            return "";
+        }
+    }
+
+    public String getDefault() {
+        try {
+            return keyStore.getKey(keyProperties.getKeyStore().getAlias(), "password".toCharArray()).toString();
         } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException e) {
             return "";
         }

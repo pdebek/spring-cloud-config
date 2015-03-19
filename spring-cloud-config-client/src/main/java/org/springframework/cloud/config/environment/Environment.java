@@ -31,6 +31,7 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  *
  */
 public class Environment {
+
     private String application;
 
 	private String name;

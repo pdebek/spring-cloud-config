@@ -34,17 +34,17 @@ public class EnvironmentController {
 
 	private EnvironmentRepository repository;
 
-	private EncryptionController encryption;
+    private EnvironmentEncryptor encryptor;
 
 	private String defaultLabel = ConfigServerProperties.MASTER;
 
 	private Map<String, String> overrides = new LinkedHashMap<String, String>();
 
 	public EnvironmentController(EnvironmentRepository repository,
-			EncryptionController encryption) {
+			EnvironmentEncryptor encryptor) {
 		super();
 		this.repository = repository;
-		this.encryption = encryption;
+		this.encryptor = encryptor;
 	}
 
 	@RequestMapping("/{name}/{profiles:.*[^-].*}")
@@ -55,7 +55,7 @@ public class EnvironmentController {
 	@RequestMapping("/{name}/{profiles}/{label:.*}")
 	public Environment labelled(@PathVariable String name, @PathVariable String profiles,
 			@PathVariable String label) {
-		Environment environment = encryption.decrypt(repository.findOne(name, profiles,
+		Environment environment = encryptor.decrypt(repository.findOne(name, profiles,
 				label));
 		if (!overrides.isEmpty()) {
 			environment.addFirst(new PropertySource("overrides", overrides));
