@@ -16,7 +16,7 @@
 package org.springframework.cloud.config.server;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.config.encrypt.KeyFormatException;
+import org.springframework.cloud.context.encrypt.KeyFormatException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;

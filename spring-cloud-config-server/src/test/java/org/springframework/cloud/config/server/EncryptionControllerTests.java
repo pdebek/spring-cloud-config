@@ -25,9 +25,12 @@ import java.util.Collections;
 
 import org.junit.Test;
 import org.springframework.cloud.bootstrap.encrypt.KeyProperties;
-import org.springframework.cloud.config.encrypt.KeyFormatException;
 import org.springframework.cloud.config.environment.Environment;
 import org.springframework.cloud.config.environment.PropertySource;
+import org.springframework.cloud.config.server.EncryptionController;
+import org.springframework.cloud.config.server.InvalidCipherException;
+import org.springframework.cloud.config.server.KeyNotInstalledException;
+import org.springframework.cloud.context.encrypt.KeyFormatException;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.MediaType;
 import org.springframework.security.rsa.crypto.RsaSecretEncryptor;
@@ -111,29 +114,29 @@ public class EncryptionControllerTests {
         controller.setKeyChain(new KeyChain(properties));
 
         Environment environment1 = new Environment("name1", "label1");
-        controller.uploadKey("foo", environment1.getApplication(), environment1.getName());
+        controller.uploadKey("foo", environment1.getName(), environment1.getProfiles()[0]);
 
         Environment environment2 = new Environment("name2", "label2");
-        controller.uploadKey("foo", environment2.getApplication(), environment2.getName());
+        controller.uploadKey("foo", environment2.getName(), environment2.getProfiles()[0]);
 
         // when
         String key = "secret";
         
         String secret1 = "secret1";
-        String encrypted1 = controller.encrypt(secret1, environment1.getApplication(), environment1.getName(), MediaType.TEXT_PLAIN);
+        String encrypted1 = controller.encrypt(secret1, environment1.getName(), environment1.getProfiles()[0], MediaType.TEXT_PLAIN);
         
         environment1.add(new PropertySource("spam", Collections
                 .<Object, Object> singletonMap(key, "{cipher}" + encrypted1)));
 
         String secret2 = "secret2";
-        String encrypted2 = controller.encrypt(secret2,  environment2.getApplication(), environment2.getName(), MediaType.TEXT_PLAIN);
+        String encrypted2 = controller.encrypt(secret2,  environment2.getName(), environment2.getProfiles()[0], MediaType.TEXT_PLAIN);
         environment2.add(new PropertySource("spam", Collections
                 .<Object, Object> singletonMap(key, "{cipher}" + encrypted2)));
 
 
         // then
-        assertEquals(secret1, controller.decrypt(secret1, environment1.getApplication(), environment1.getName(), MediaType.TEXT_PLAIN));
-        assertEquals(secret2, controller.decrypt(secret2, environment2.getApplication(), environment2.getName(), MediaType.TEXT_PLAIN));
+        assertEquals(secret1, controller.decrypt(secret1, environment1.getName(), environment1.getProfiles()[0], MediaType.TEXT_PLAIN));
+        assertEquals(secret2, controller.decrypt(secret2, environment2.getName(), environment2.getProfiles()[0], MediaType.TEXT_PLAIN));
     }
 
 
