@@ -16,11 +16,11 @@
 
 package org.springframework.cloud.config.environment;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * Simple plain text serializable encapsulation of a list of property sources. Basically a
@@ -40,15 +40,22 @@ public class Environment {
 
 	private List<PropertySource> propertySources = new ArrayList<PropertySource>();
 
-    @JsonCreator
-    public Environment(@JsonProperty("name") String name,
-                       @JsonProperty("label") String label) {
+    public Environment(String name, String label) {
         this.name = name;
         this.label = label;
     }
 
-	public void add(PropertySource propertySource) {
-		this.propertySources.add(propertySource);
+    @JsonCreator
+    public Environment(@JsonProperty("application") String application,
+                       @JsonProperty("name") String name,
+                       @JsonProperty("label") String label) {
+        this.application = application;
+        this.name = name;
+        this.label = label;
+    }
+
+    public void add(PropertySource propertySource) {
+        this.propertySources.add(propertySource);
 	}
 
 	public void addFirst(PropertySource propertySource) {
