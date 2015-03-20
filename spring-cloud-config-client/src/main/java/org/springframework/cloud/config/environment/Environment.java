@@ -40,21 +40,9 @@ public class Environment {
 
 	private List<PropertySource> propertySources = new ArrayList<PropertySource>();
 
-
     @JsonCreator
-	public Environment(@JsonProperty("name") String name,
-			@JsonProperty("label") String label) {
-		super();
-		this.name = name;
-		this.label = label;
-	}
-
-    @JsonCreator
-    public Environment(@JsonProperty("name") String application,
-                       @JsonProperty("name") String name,
+    public Environment(@JsonProperty("name") String name,
                        @JsonProperty("label") String label) {
-        super();
-        this.application = application;
         this.name = name;
         this.label = label;
     }

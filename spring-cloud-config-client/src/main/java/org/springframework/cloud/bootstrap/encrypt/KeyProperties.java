@@ -22,6 +22,8 @@ import org.springframework.core.io.Resource;
 public class KeyProperties {
 
 	private String key;
+
+    private boolean keystoreEnabled = true;
 	
 	private boolean failOnError = true;
 
@@ -51,7 +53,15 @@ public class KeyProperties {
 		this.keyStore = keyStore;
 	}
 
-	public static class KeyStore {
+    public boolean isKeystoreEnabled() {
+        return keystoreEnabled;
+    }
+
+    public void setKeystoreEnabled(boolean keystoreEnabled) {
+        this.keystoreEnabled = keystoreEnabled;
+    }
+
+    public static class KeyStore {
 
 		private Resource location;
 		private String password;

@@ -6,7 +6,6 @@ import org.springframework.cloud.config.environment.Environment;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.stereotype.Component;
 
-@Component
 public class TextEncryptorLocator {
 
     private EncryptorFactory encryptorFactory;

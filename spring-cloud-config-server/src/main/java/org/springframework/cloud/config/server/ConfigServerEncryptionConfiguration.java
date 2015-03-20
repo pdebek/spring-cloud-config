@@ -1,6 +1,10 @@
 package org.springframework.cloud.config.server;
 
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.AutoConfigureAfter;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.cloud.bootstrap.encrypt.EncryptionBootstrapConfiguration;
 import org.springframework.cloud.bootstrap.encrypt.KeyProperties;
 import org.springframework.cloud.config.encrypt.EncryptorFactory;
 import org.springframework.cloud.config.environment.Environment;
@@ -11,22 +15,26 @@ import java.util.HashMap;
 import java.util.Map;
 
 @Configuration
+@AutoConfigureAfter(EncryptionBootstrapConfiguration.class)
 public class ConfigServerEncryptionConfiguration {
+
+    @Autowired
+    private KeyProperties key;
 
     @Bean
     public EncryptorFactory encryptorFactory() {
         return new EncryptorFactory();
     }
 
-//    @Bean
-//    @ConditionalOnProperty("encrypt.keyStore.location")
-//    public IKeyChain keyChain(KeyProperties keyProperties) {
-//        return new KeyChain(keyProperties.getKeyStore());
-//    }
+    @Bean
+    @ConditionalOnProperty(value = "encrypt.keystoreEnabled", havingValue = "true")
+    public IKeyChain keyChain() {
+        return new KeyChain(key.getKeyStore());
+    }
 
     @Bean
-//    @ConditionalOnProperty(value ="encrypt.keyStore.location", matchIfMissing = true)
-    public IKeyChain keyChain() {
+    @ConditionalOnMissingBean
+    public IKeyChain noOpKeyChain() {
         return new IKeyChain() {
 
             private Map<String, String> keyStorage = new HashMap<>();
@@ -53,15 +61,20 @@ public class ConfigServerEncryptionConfiguration {
         };
     }
 
-//    @Bean
-//    @ConditionalOnProperty("encrypt.keyStore.location")
-//    public EnvironmentEncryptor environmentEncryptor(TextEncryptorLocator textEncryptorLocator) {
-//        return new EnvironmentEncryptorImpl(textEncryptorLocator);
-//    }
+    @Bean
+    public TextEncryptorLocator textEncryptorLocator(EncryptorFactory encryptorFactory, IKeyChain keyChain) {
+        return new TextEncryptorLocator(encryptorFactory, keyChain);
+    }
 
     @Bean
-//    @ConditionalOnProperty(value = "encrypt.keyStore.location", matchIfMissing = true)
-    public EnvironmentEncryptor environmentEncryptor() {
+    @ConditionalOnProperty("encrypt.keystoreEnabled")
+    public EnvironmentEncryptor environmentEncryptor(TextEncryptorLocator textEncryptorLocator) {
+        return new EnvironmentEncryptorImpl(textEncryptorLocator);
+    }
+
+    @Bean
+    @ConditionalOnProperty(value = "!encrypt.keystoreEnabled", matchIfMissing = true)
+    public EnvironmentEncryptor noOpEnvironmentEncryptor() {
         return new EnvironmentEncryptor() {
             @Override
             public Environment decrypt(Environment environment) {
