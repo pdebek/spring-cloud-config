@@ -11,7 +11,7 @@ import java.security.NoSuchAlgorithmException;
 import java.security.UnrecoverableKeyException;
 import java.security.cert.CertificateException;
 
-public class KeyChain {
+public class KeyChain implements IKeyChain {
 
     private KeyStore keyStore;
     private KeyProperties keyProperties;
@@ -25,6 +25,7 @@ public class KeyChain {
         }
     }
 
+    @Override
     public void add(String alias, String key) {
         try {
             SecretKeySpec spec = new SecretKeySpec(key.getBytes(), "AES");
@@ -34,18 +35,21 @@ public class KeyChain {
         }
     }
 
+    @Override
     public void addDefault(String key) {
         add(keyProperties.getKeyStore().getAlias(), key);
     }
 
-    public String get(Environment environment) {
+    @Override
+    public String get(String alias) {
         try {
-            return keyStore.getKey(environment.getApplication() + "-" + environment.getName(), "password".toCharArray()).toString();
+            return keyStore.getKey(alias, "password".toCharArray()).toString();
         } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException e) {
             return "";
         }
     }
 
+    @Override
     public String getDefault() {
         try {
             return keyStore.getKey(keyProperties.getKeyStore().getAlias(), "password".toCharArray()).toString();

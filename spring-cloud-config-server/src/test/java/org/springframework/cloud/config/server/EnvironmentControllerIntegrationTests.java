@@ -25,6 +25,10 @@ import org.springframework.test.web.servlet.request.MockMvcRequestBuilders;
 import org.springframework.test.web.servlet.result.MockMvcResultMatchers;
 import org.springframework.test.web.servlet.setup.MockMvcBuilders;
 
+import static org.mockito.AdditionalAnswers.returnsFirstArg;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
+
 /**
  * @author Dave Syer
  *
@@ -33,12 +37,16 @@ public class EnvironmentControllerIntegrationTests {
 
 	private MockMvc mvc;
 	private EnvironmentRepository repository = Mockito.mock(EnvironmentRepository.class);
+    private EnvironmentEncryptor encryptor = Mockito.mock(EnvironmentEncryptor.class);
 
 	@Before
 	public void init() {
+        when(encryptor.decrypt(any(Environment.class))).then(returnsFirstArg());
+
 		mvc = MockMvcBuilders.standaloneSetup(
-				new EnvironmentController(repository, new EncryptionController()))
+				new EnvironmentController(repository, encryptor))
 				.build();
+
 	}
 
 	@Test

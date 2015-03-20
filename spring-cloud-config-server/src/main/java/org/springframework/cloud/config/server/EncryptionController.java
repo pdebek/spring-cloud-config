@@ -16,19 +16,16 @@
 package org.springframework.cloud.config.server;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.config.encrypt.EncryptorFactory;
 import org.springframework.cloud.config.encrypt.KeyFormatException;
-import org.springframework.cloud.config.environment.Environment;
-import org.springframework.core.io.ByteArrayResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.codec.Base64;
 import org.springframework.security.crypto.codec.Hex;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
-import org.springframework.security.rsa.crypto.KeyStoreKeyFactory;
 import org.springframework.security.rsa.crypto.RsaKeyHolder;
 import org.springframework.web.bind.annotation.ExceptionHandler;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -39,10 +36,8 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
-import java.io.IOException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
-import java.security.KeyPair;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
@@ -55,11 +50,11 @@ import java.util.Map;
 @RequestMapping("${spring.cloud.config.server.prefix:}")
 public class EncryptionController {
 
-    private KeyChain keyChain;
+    private IKeyChain keyChain;
     private TextEncryptorLocator textEncryptorLocator;
 
     @Autowired
-    public void setKeyChain(KeyChain keyChain) {
+    public void setKeyChain(IKeyChain keyChain) {
         this.keyChain = keyChain;
     }
 
@@ -153,10 +148,6 @@ public class EncryptionController {
         return textEncryptorLocator.locate().encrypt(data);
     }
 
-    public String encrypt(String data, Environment environment) {
-        return new EncryptorFactory().create(keyChain.get(environment)).encrypt(data);
-    }
-
 	@RequestMapping(value = "decrypt", method = RequestMethod.POST)
 	public String decrypt(@RequestBody String data,
 			@RequestHeader("Content-Type") MediaType type) {
@@ -170,6 +161,18 @@ public class EncryptionController {
 			throw new InvalidCipherException();
 		}
 	}
+
+    @RequestMapping(value = "/decrypt/{name}/{profiles}/", method = RequestMethod.POST)
+    public String decrypt(@PathVariable String name, @PathVariable String profiles, @RequestBody String data,
+                          @RequestHeader("Content-Type") MediaType type) {
+        return textEncryptorLocator.locate(name, profiles).decrypt(data);
+    }
+
+    @RequestMapping(value = "/encrypt/{name}/{profiles}/", method = RequestMethod.POST)
+    public String encrypt(@PathVariable String name, @PathVariable String profiles, @RequestBody String data,
+                          @RequestHeader("Content-Type") MediaType type) {
+        return textEncryptorLocator.locate(name, profiles).encrypt(data);
+    }
 
 
 	private String stripFormData(String data, MediaType type, boolean cipher) {

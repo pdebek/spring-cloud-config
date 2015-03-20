@@ -17,12 +17,17 @@ package org.springframework.cloud.config.server;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
+import static org.mockito.AdditionalAnswers.returnsFirstArg;
+import static org.mockito.BDDMockito.given;
+import static org.mockito.Matchers.any;
+import static org.mockito.Mockito.when;
 
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 
+import org.junit.Before;
 import org.junit.Rule;
 import org.junit.Test;
 import org.junit.rules.ExpectedException;
@@ -48,18 +53,23 @@ public class EnvironmentControllerTests {
 	public ExpectedException expected = ExpectedException.none();
 
 	private EnvironmentRepository repository = Mockito.mock(EnvironmentRepository.class);
+    private EnvironmentEncryptor encryptor = Mockito.mock(EnvironmentEncryptor.class);
 
-	private EnvironmentController controller = new EnvironmentController(repository,
-			new EncryptionController());
+	private EnvironmentController controller = new EnvironmentController(repository, encryptor);
 
 	private Environment environment = new Environment("foo", "master");
+
+    @Before
+    public void setup() {
+        when(encryptor.decrypt(any(Environment.class))).then(returnsFirstArg());
+    }
 
 	@Test
 	public void vanillaYaml() throws Exception {
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("a.b.c", "d");
 		environment.add(new PropertySource("one", map));
-		Mockito.when(repository.findOne("foo", "bar", "master")).thenReturn(environment);
+		when(repository.findOne("foo", "bar", "master")).thenReturn(environment);
 		String yaml = controller.yaml("foo", "bar").getBody();
 		assertEquals("a:\n  b:\n    c: d\n", yaml);
 	}
@@ -71,7 +81,7 @@ public class EnvironmentControllerTests {
 		environment.add(new PropertySource("one", map));
 		environment.addFirst(new PropertySource("two", Collections.singletonMap("a.b.c",
 				"e")));
-		Mockito.when(repository.findOne("foo", "bar", "master")).thenReturn(environment);
+		when(repository.findOne("foo", "bar", "master")).thenReturn(environment);
 		String yaml = controller.yaml("foo", "bar").getBody();
 		assertEquals("a:\n  b:\n    c: e\n", yaml);
 	}
@@ -82,7 +92,7 @@ public class EnvironmentControllerTests {
 		map.put("a.b[0]", "c");
 		map.put("a.b[1]", "d");
 		environment.add(new PropertySource("one", map));
-		Mockito.when(repository.findOne("foo", "bar", "master")).thenReturn(environment);
+		when(repository.findOne("foo", "bar", "master")).thenReturn(environment);
 		String yaml = controller.yaml("foo", "bar").getBody();
 		assertEquals("a:\n  b:\n  - c\n  - d\n", yaml);
 	}
@@ -94,7 +104,7 @@ public class EnvironmentControllerTests {
 		map.put("a.b[0].d", "e");
 		map.put("a.b[1].c", "d");
 		environment.add(new PropertySource("one", map));
-		Mockito.when(repository.findOne("foo", "bar", "master")).thenReturn(environment);
+		when(repository.findOne("foo", "bar", "master")).thenReturn(environment);
 		String yaml = controller.yaml("foo", "bar").getBody();
 		assertTrue("Wrong output: " + yaml,
 				"a:\n  b:\n  - d: e\n    c: d\n  - c: d\n".equals(yaml)
@@ -107,7 +117,7 @@ public class EnvironmentControllerTests {
 		map.put("b[0].c", "d");
 		map.put("b[1].c", "d");
 		environment.add(new PropertySource("one", map));
-		Mockito.when(repository.findOne("foo", "bar", "master")).thenReturn(environment);
+		when(repository.findOne("foo", "bar", "master")).thenReturn(environment);
 		String yaml = controller.yaml("foo", "bar").getBody();
 		assertEquals("b:\n- c: d\n- c: d\n", yaml);
 	}
@@ -118,14 +128,14 @@ public class EnvironmentControllerTests {
 		map.put("x.a.b[0].c", "d");
 		map.put("x.a.b[1].c", "d");
 		environment.add(new PropertySource("one", map));
-		Mockito.when(repository.findOne("foo", "bar", "master")).thenReturn(environment);
+		when(repository.findOne("foo", "bar", "master")).thenReturn(environment);
 		String yaml = controller.yaml("foo", "bar").getBody();
 		assertEquals("x:\n  a:\n    b:\n    - c: d\n    - c: d\n", yaml);
 	}
 
 	@Test
 	public void mappingForEnvironment() throws Exception {
-		Mockito.when(repository.findOne("foo", "bar", "master")).thenReturn(environment);
+		when(repository.findOne("foo", "bar", "master")).thenReturn(environment);
 		MockMvc mvc = MockMvcBuilders.standaloneSetup(controller).build();
 		mvc.perform(MockMvcRequestBuilders.get("/foo/bar")).andExpect(
 				MockMvcResultMatchers.status().isOk());
@@ -133,7 +143,7 @@ public class EnvironmentControllerTests {
 
 	@Test
 	public void mappingForLabelledEnvironment() throws Exception {
-		Mockito.when(repository.findOne("foo", "bar", "other")).thenReturn(environment);
+		when(repository.findOne("foo", "bar", "other")).thenReturn(environment);
 		MockMvc mvc = MockMvcBuilders.standaloneSetup(controller).build();
 		mvc.perform(MockMvcRequestBuilders.get("/foo/bar/other")).andExpect(
 				MockMvcResultMatchers.status().isOk());
@@ -141,7 +151,7 @@ public class EnvironmentControllerTests {
 
 	@Test
 	public void mappingForYaml() throws Exception {
-		Mockito.when(repository.findOne("foo", "bar", "master")).thenReturn(environment);
+		when(repository.findOne("foo", "bar", "master")).thenReturn(environment);
 		MockMvc mvc = MockMvcBuilders.standaloneSetup(controller).build();
 		mvc.perform(MockMvcRequestBuilders.get("/foo-bar.yml")).andExpect(
 				MockMvcResultMatchers.content().contentType(MediaType.TEXT_PLAIN));
@@ -149,7 +159,7 @@ public class EnvironmentControllerTests {
 
 	@Test
 	public void mappingForLabelledYaml() throws Exception {
-		Mockito.when(repository.findOne("foo", "bar", "other")).thenReturn(environment);
+		when(repository.findOne("foo", "bar", "other")).thenReturn(environment);
 		MockMvc mvc = MockMvcBuilders.standaloneSetup(controller).build();
 		mvc.perform(MockMvcRequestBuilders.get("/other/foo-bar.yml")).andExpect(
 				MockMvcResultMatchers.content().contentType(MediaType.TEXT_PLAIN));
@@ -157,7 +167,7 @@ public class EnvironmentControllerTests {
 
 	@Test
 	public void mappingForLabelledProperties() throws Exception {
-		Mockito.when(repository.findOne("foo", "bar", "other")).thenReturn(environment);
+		when(repository.findOne("foo", "bar", "other")).thenReturn(environment);
 		MockMvc mvc = MockMvcBuilders.standaloneSetup(controller).build();
 		mvc.perform(MockMvcRequestBuilders.get("/other/foo-bar.properties")).andExpect(
 				MockMvcResultMatchers.content().contentType(MediaType.TEXT_PLAIN));
@@ -165,7 +175,7 @@ public class EnvironmentControllerTests {
 
 	@Test
 	public void mappingForProperties() throws Exception {
-		Mockito.when(repository.findOne("foo", "bar", "master")).thenReturn(environment);
+		when(repository.findOne("foo", "bar", "master")).thenReturn(environment);
 		MockMvc mvc = MockMvcBuilders.standaloneSetup(controller).build();
 		mvc.perform(MockMvcRequestBuilders.get("/foo-bar.properties")).andExpect(
 				MockMvcResultMatchers.content().contentType(MediaType.TEXT_PLAIN));
@@ -173,7 +183,7 @@ public class EnvironmentControllerTests {
 
 	@Test
 	public void mappingForLabelledYamlWithHyphen() throws Exception {
-		Mockito.when(repository.findOne("foo", "bar-spam", "other")).thenReturn(
+		when(repository.findOne("foo", "bar-spam", "other")).thenReturn(
 				environment);
 		MockMvc mvc = MockMvcBuilders.standaloneSetup(controller).build();
 		mvc.perform(MockMvcRequestBuilders.get("/other/foo-bar-spam.yml")).andExpect(
@@ -186,7 +196,7 @@ public class EnvironmentControllerTests {
 		Map<String, Object> map = new HashMap<String, Object>();
 		map.put("a.b.c", "d");
 		environment.add(new PropertySource("one", map));
-		Mockito.when(repository.findOne("foo", "bar", "master")).thenReturn(environment);
+		when(repository.findOne("foo", "bar", "master")).thenReturn(environment);
 		assertEquals("{foo=bar}", controller.master("foo", "bar").getPropertySources()
 				.get(0).getSource().toString());
 	}

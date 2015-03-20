@@ -18,6 +18,7 @@ package org.springframework.cloud.config.server;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnWebApplication;
 import org.springframework.cloud.bootstrap.encrypt.KeyProperties;
+import org.springframework.cloud.config.environment.Environment;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
@@ -36,22 +37,11 @@ public class ConfigServerMvcConfiguration {
 	private TextEncryptor encryptor;
 
 	@Autowired
-	private EnvironmentRepository repository;
-	
-	@Autowired
 	private ConfigServerProperties server;
 
-    @Autowired
-    private KeyProperties keyProperties;
-
-    @Bean
-    public KeyChain keyChain() throws KeyStoreException {
-        return new KeyChain(keyProperties.getKeyStore());
-    }
-
 	@Bean
-	public EnvironmentController environmentController() {
-		EnvironmentController controller = new EnvironmentController(repository, encryptionController());
+	public EnvironmentController environmentController(EnvironmentRepository repository, EnvironmentEncryptor encryptor) {
+		EnvironmentController controller = new EnvironmentController(repository, encryptor);
 		controller.setDefaultLabel(server.getDefaultLabel());
 		controller.setOverrides(server.getOverrides());
 		return controller;
