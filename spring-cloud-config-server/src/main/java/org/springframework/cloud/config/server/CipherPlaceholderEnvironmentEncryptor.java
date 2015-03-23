@@ -32,22 +32,17 @@ public class CipherPlaceholderEnvironmentEncryptor implements EnvironmentEncrypt
                 String name = key.toString();
                 String value = entry.getValue().toString();
                 if (value.startsWith("{cipher}")) {
-                    TextEncryptor encryptor = locator.locate(environment);
                     map.remove(key);
-                    if (encryptor == null) {
-                        map.put(name, value);
-                    } else {
-                        try {
-                            value = value == null ? null : encryptor.decrypt(value
+                    try {
+                        value = value == null ? null : locator.locate(environment).decrypt(value
                                     .substring("{cipher}".length()));
-                        } catch (Exception e) {
-                            value = "<n/a>";
-                            name = "invalid." + name;
-                            logger.warn("Cannot decrypt key: " + key + " ("
-                                    + e.getClass() + ": " + e.getMessage() + ")");
-                        }
-                        map.put(name, value);
+                    } catch (Exception e) {
+                        value = "<n/a>";
+                        name = "invalid." + name;
+                        logger.warn("Cannot decrypt key: " + key + " ("
+                                + e.getClass() + ": " + e.getMessage() + ")");
                     }
+                    map.put(name, value);
                 }
             }
             result.add(new PropertySource(source.getName(), map));

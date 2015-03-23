@@ -1,8 +1,7 @@
 package org.springframework.cloud.config.server;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.autoconfigure.AutoConfigureAfter;
-import org.springframework.cloud.bootstrap.encrypt.EncryptionBootstrapConfiguration;
+import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.cloud.bootstrap.encrypt.KeyProperties;
 import org.springframework.cloud.config.environment.Environment;
 import org.springframework.cloud.context.encrypt.EncryptorFactory;
@@ -10,7 +9,7 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
 @Configuration
-@AutoConfigureAfter(EncryptionBootstrapConfiguration.class)
+@EnableConfigurationProperties({KeyProperties.class})
 public class ConfigServerEncryptionConfiguration {
 
     @Autowired

@@ -5,6 +5,7 @@ import org.springframework.cloud.context.encrypt.KeyFormatException;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
+import java.security.Key;
 import java.security.KeyStore;
 import java.security.KeyStoreException;
 import java.security.NoSuchAlgorithmException;
@@ -47,7 +48,8 @@ public class AESKeyChain implements KeyChain {
     @Override
     public String get(String alias) {
         try {
-            return keyStore.getKey(alias, properties.getPassword().toCharArray()).toString();
+            Key found = keyStore.getKey(alias, properties.getPassword().toCharArray());
+            return found != null? found.toString() : "";
         } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException e) {
             throw new KeyChainException(e);
         }
