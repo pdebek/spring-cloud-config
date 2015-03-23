@@ -17,6 +17,7 @@
 package org.springframework.cloud.config.environment;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import com.fasterxml.jackson.annotation.JsonCreator;
@@ -32,20 +33,27 @@ import com.fasterxml.jackson.annotation.JsonProperty;
  */
 public class Environment {
 
-    private String application;
+    private String name;
 
-	private String name;
+	private String[] profiles = new String[0];
 
 	private String label;
 
 	private List<PropertySource> propertySources = new ArrayList<PropertySource>();
 
-    @JsonCreator
-    public Environment(@JsonProperty("name") String name,
-                       @JsonProperty("label") String label) {
-        this.name = name;
-        this.label = label;
-    }
+	public Environment(String name, String... profiles) {
+		this(name, profiles, "master");
+	}
+
+	@JsonCreator
+	public Environment(@JsonProperty("name") String name,
+			@JsonProperty("profiles") String[] profiles,
+			@JsonProperty("label") String label) {
+		super();
+		this.name = name;
+		this.profiles = profiles;
+		this.label = label;
+	}
 
 	public void add(PropertySource propertySource) {
 		this.propertySources.add(propertySource);
@@ -59,21 +67,34 @@ public class Environment {
 		return propertySources;
 	}
 
-    public String getApplication() {
-        return application;
-    }
-
 	public String getName() {
 		return name;
+	}
+	
+	public void setName(String name) {
+		this.name = name;
 	}
 
 	public String getLabel() {
 		return label;
 	}
+	
+	public void setLabel(String label) {
+		this.label = label;
+	}
+
+	public String[] getProfiles() {
+		return profiles;
+	}
+
+	public void setProfiles(String[] profiles) {
+		this.profiles = profiles;
+	}
 
 	@Override
 	public String toString() {
-		return "Environment [application=" + application + ", name=" + name + ", label=" + label + ", propertySources="
-				+ propertySources + "]";
+		return "Environment [name=" + name + ", profiles=" + Arrays.asList(profiles)
+				+ ", label=" + label + ", propertySources=" + propertySources + "]";
 	}
+
 }
