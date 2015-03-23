@@ -1,6 +1,6 @@
 package org.springframework.cloud.config.server;
 
-public class EmptyKeyChain implements IKeyChain {
+public class EmptyKeyChain implements KeyChain {
     @Override
     public void add(String alias, String key) {
     }

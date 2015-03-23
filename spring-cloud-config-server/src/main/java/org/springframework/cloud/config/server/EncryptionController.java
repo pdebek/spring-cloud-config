@@ -49,11 +49,11 @@ import java.util.Map;
 @RequestMapping("${spring.cloud.config.server.prefix:}")
 public class EncryptionController {
 
-    private IKeyChain keyChain;
+    private KeyChain keyChain;
     private TextEncryptorLocator textEncryptorLocator;
 
     @Autowired
-    public EncryptionController(IKeyChain keyChain, TextEncryptorLocator textEncryptorLocator) {
+    public EncryptionController(KeyChain keyChain, TextEncryptorLocator textEncryptorLocator) {
         this.keyChain = keyChain;
         this.textEncryptorLocator = textEncryptorLocator;
     }

@@ -10,16 +10,16 @@ public class TextEncryptorLocator {
 
     private EncryptorFactory encryptorFactory;
 
-    private IKeyChain IKeyChain;
+    private KeyChain KeyChain;
 
     @Autowired
-    public TextEncryptorLocator(EncryptorFactory encryptorFactory, IKeyChain IKeyChain) {
+    public TextEncryptorLocator(EncryptorFactory encryptorFactory, KeyChain KeyChain) {
         this.encryptorFactory = encryptorFactory;
-        this.IKeyChain = IKeyChain;
+        this.KeyChain = KeyChain;
     }
 
     public TextEncryptor locate() {
-        return locate(IKeyChain.getDefault());
+        return locate(KeyChain.getDefault());
     }
 
     public TextEncryptor locate(Environment environment) {
@@ -27,7 +27,7 @@ public class TextEncryptorLocator {
     }
 
     public TextEncryptor locate(String application, String name) {
-        return locate(IKeyChain.get(EnvironmentAlias.of(application, name)));
+        return locate(KeyChain.get(EnvironmentAlias.of(application, name)));
     }
 
     private TextEncryptor locate(String key) {

@@ -35,7 +35,7 @@ public class ConfigServerMvcConfiguration {
 	private ConfigServerProperties server;
 
     @Autowired
-    private IKeyChain keyChain;
+    private KeyChain keyChain;
 
 	@Bean
 	public EnvironmentController environmentController(EnvironmentRepository repository, EnvironmentEncryptor encryptor) {

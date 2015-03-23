@@ -41,7 +41,7 @@ public class EncryptionControllerTests {
 
 	private EncryptionController controller;
     private EncryptorFactory encryptorFactory = new EncryptorFactory();
-    private IKeyChain emptyKeyChain = new EmptyKeyChain();
+    private KeyChain emptyKeyChain = new EmptyKeyChain();
 
     @Before
     public void setup() {
@@ -49,8 +49,8 @@ public class EncryptionControllerTests {
         properties.setLocation(new UrlResource(EncryptionControllerTests.class.getClassLoader().getResource("aes-keystore.jck")));
         properties.setPassword("password");
         properties.setAlias("default");
-        KeyChain keyChain = new KeyChain(properties);
-        this.controller = new EncryptionController(keyChain, new TextEncryptorLocator(encryptorFactory, keyChain));
+        AESKeyChain AESKeyChain = new AESKeyChain(properties);
+        this.controller = new EncryptionController(AESKeyChain, new TextEncryptorLocator(encryptorFactory, AESKeyChain));
         controller.uploadKey("aa", MediaType.TEXT_PLAIN);
     }
 

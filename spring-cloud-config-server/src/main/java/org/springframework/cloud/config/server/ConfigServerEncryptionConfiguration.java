@@ -28,14 +28,14 @@ public class ConfigServerEncryptionConfiguration {
 
     @Bean
     @ConditionalOnProperty(value = "encrypt.keystoreEnabled", havingValue = "true")
-    public IKeyChain keyChain() {
-        return new KeyChain(key.getKeyStore());
+    public KeyChain keyChain() {
+        return new AESKeyChain(key.getKeyStore());
     }
 
     @Bean
     @ConditionalOnMissingBean
-    public IKeyChain noOpKeyChain() {
-        return new IKeyChain() {
+    public KeyChain noOpKeyChain() {
+        return new KeyChain() {
 
             private Map<String, String> keyStorage = new HashMap<>();
 
@@ -62,7 +62,7 @@ public class ConfigServerEncryptionConfiguration {
     }
 
     @Bean
-    public TextEncryptorLocator textEncryptorLocator(EncryptorFactory encryptorFactory, IKeyChain keyChain) {
+    public TextEncryptorLocator textEncryptorLocator(EncryptorFactory encryptorFactory, KeyChain keyChain) {
         return new TextEncryptorLocator(encryptorFactory, keyChain);
     }
 
