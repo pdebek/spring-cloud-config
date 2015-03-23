@@ -21,7 +21,7 @@ import org.springframework.test.context.web.WebAppConfiguration;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @SpringApplicationConfiguration(classes = ConfigServerApplication.class)
-@IntegrationTest({ "server.port:0", "spring.cloud.bootstrap.name:enable-bootstrap" })
+@IntegrationTest({ "server.port:0", "spring.cloud.bootstrap.name:enable-bootstrap", "info.foo:bar" })
 @WebAppConfiguration
 @ActiveProfiles("test")
 public class BootstrapConfigServerIntegrationTests {

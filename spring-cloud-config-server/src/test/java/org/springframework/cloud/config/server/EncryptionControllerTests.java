@@ -57,7 +57,7 @@ public class EncryptionControllerTests {
         TextEncryptorLocator encryptorLocator = new TextEncryptorLocator(encryptorFactory, keyChain);
         this.controller = new EncryptionController(keyChain, encryptorLocator);
         controller.uploadKey("aa", TEXT_PLAIN);
-        this.encryptor = new EnvironmentEncryptorImpl(encryptorLocator);
+        this.encryptor = new CipherPlaceholderEnvironmentEncryptor(encryptorLocator);
     }
 
 

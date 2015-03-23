@@ -10,13 +10,13 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.Map;
 
-public class EnvironmentEncryptorImpl implements EnvironmentEncryptor {
+public class CipherPlaceholderEnvironmentEncryptor implements EnvironmentEncryptor {
 
-    private static Log logger = LogFactory.getLog(EnvironmentEncryptorImpl.class);
+    private static Log logger = LogFactory.getLog(CipherPlaceholderEnvironmentEncryptor.class);
 
     private TextEncryptorLocator locator;
 
-    public EnvironmentEncryptorImpl(TextEncryptorLocator locator) {
+    public CipherPlaceholderEnvironmentEncryptor(TextEncryptorLocator locator) {
         this.locator = locator;
     }
 
