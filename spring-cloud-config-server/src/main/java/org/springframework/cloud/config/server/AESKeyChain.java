@@ -15,7 +15,6 @@ public class AESKeyChain implements KeyChain {
 
     public static final String SYMMETRIC_KEY_STORE = "JCEKS";
     public static final String DEFAULT_ALGORYTHM = "AES";
-    public static final String DEFAULT_PASSWORD = "password";
 
     private KeyStore keyStore;
     private KeyProperties.KeyStore properties;
@@ -34,7 +33,7 @@ public class AESKeyChain implements KeyChain {
     public void add(String alias, String key) {
         try {
             SecretKeySpec spec = new SecretKeySpec(key.getBytes(), DEFAULT_ALGORYTHM);
-            this.keyStore.setKeyEntry(alias, spec, DEFAULT_PASSWORD.toCharArray(), null);
+            this.keyStore.setKeyEntry(alias, spec, properties.getPassword().toCharArray(), null);
         } catch (KeyStoreException e) {
             throw new KeyFormatException();
         }
@@ -48,7 +47,7 @@ public class AESKeyChain implements KeyChain {
     @Override
     public String get(String alias) {
         try {
-            return keyStore.getKey(alias, DEFAULT_PASSWORD.toCharArray()).toString();
+            return keyStore.getKey(alias, properties.getPassword().toCharArray()).toString();
         } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException e) {
             throw new KeyChainException(e);
         }
