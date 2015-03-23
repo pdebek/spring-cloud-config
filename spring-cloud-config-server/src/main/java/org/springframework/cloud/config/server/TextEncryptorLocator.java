@@ -23,7 +23,12 @@ public class TextEncryptorLocator {
     }
 
     public TextEncryptor locate(Environment environment) {
-        return locate(environment.getName(), environment.getName());
+        for(String profile : environment.getProfiles()) {
+            try {
+                return locate(environment.getName(), profile);
+            } catch (KeyNotInstalledException ex) {}
+        }
+        return locate();
     }
 
     public TextEncryptor locate(String application, String name) {

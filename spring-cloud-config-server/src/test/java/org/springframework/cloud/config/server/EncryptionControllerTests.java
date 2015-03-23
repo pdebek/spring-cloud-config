@@ -16,20 +16,22 @@
 package org.springframework.cloud.config.server;
 
 import static java.util.Arrays.asList;
+import static java.util.UUID.randomUUID;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.MediaType.TEXT_PLAIN;
 
 import java.security.KeyStoreException;
+import java.util.Collections;
 import java.util.List;
-import java.util.UUID;
 
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.cloud.bootstrap.encrypt.KeyProperties;
 import org.springframework.cloud.config.environment.Environment;
+import org.springframework.cloud.config.environment.PropertySource;
 import org.springframework.cloud.context.encrypt.EncryptorFactory;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.MediaType;
@@ -43,6 +45,7 @@ public class EncryptionControllerTests {
 	private EncryptionController controller;
     private EncryptorFactory encryptorFactory = new EncryptorFactory();
     private KeyChain emptyKeyChain = new EmptyKeyChain();
+    private EnvironmentEncryptor encryptor;
 
     @Before
     public void setup() {
@@ -50,9 +53,11 @@ public class EncryptionControllerTests {
         properties.setLocation(new UrlResource(EncryptionControllerTests.class.getClassLoader().getResource("aes-keystore.jck")));
         properties.setPassword("password");
         properties.setAlias("default");
-        AESKeyChain AESKeyChain = new AESKeyChain(properties);
-        this.controller = new EncryptionController(AESKeyChain, new TextEncryptorLocator(encryptorFactory, AESKeyChain));
+        AESKeyChain keyChain = new AESKeyChain(properties);
+        TextEncryptorLocator encryptorLocator = new TextEncryptorLocator(encryptorFactory, keyChain);
+        this.controller = new EncryptionController(keyChain, encryptorLocator);
         controller.uploadKey("aa", TEXT_PLAIN);
+        this.encryptor = new EnvironmentEncryptorImpl(encryptorLocator);
     }
 
 
@@ -110,12 +115,13 @@ public class EncryptionControllerTests {
         // given
         List<Environment> environments = asList(new Environment("name1", "label1"), new Environment("name2", "label2"));
         for(Environment env : environments) {
-            controller.uploadKey(UUID.randomUUID().toString(), env.getName(), env.getProfiles()[0]);
+            controller.uploadKey(randomUUID().toString(), env.getName(), env.getProfiles()[0]);
         }
 
         // when & then
         for(Environment env : environments) {
             shouldDecryptEnvironmentUsingAppropriateEncryptionKey(env);
+            shouldDecryptEnvironmentUsingEnvironmentEncryptor(env);
         }
     }
 
@@ -131,6 +137,20 @@ public class EncryptionControllerTests {
         assertEquals(secret, controller.decrypt(environment.getName(), profile, encrypted, TEXT_PLAIN));
     }
 
+    public void shouldDecryptEnvironmentUsingEnvironmentEncryptor(Environment environment) {
+        // given
+        String secret = environment.toString();
+        String profile = environment.getProfiles()[0];
+
+        // when
+        String encrypted = controller.encrypt(environment.getName(), profile, secret, TEXT_PLAIN);
+        Environment clone = new Environment(environment.getName(), environment.getProfiles(), environment.getLabel());
+        clone.add(new PropertySource("a",
+                Collections.<Object, Object>singletonMap(environment.getName(), "{cipher}" + encrypted)));
+
+        // then
+        assertEquals(secret, encryptor.decrypt(clone).getPropertySources().get(0).getSource().get(environment.getName()));
+    }
 
 	@Test
 	public void randomizedCipher() {
