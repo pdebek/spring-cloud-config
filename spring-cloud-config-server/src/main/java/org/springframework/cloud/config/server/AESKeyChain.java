@@ -4,6 +4,7 @@ import org.springframework.cloud.bootstrap.encrypt.KeyProperties;
 import org.springframework.cloud.context.encrypt.KeyFormatException;
 
 import javax.crypto.spec.SecretKeySpec;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.security.Key;
 import java.security.KeyStore;
@@ -35,8 +36,15 @@ public class AESKeyChain implements KeyChain {
         try {
             SecretKeySpec spec = new SecretKeySpec(key.getBytes(), DEFAULT_ALGORYTHM);
             this.keyStore.setKeyEntry(alias, spec, properties.getPassword().toCharArray(), null);
-        } catch (KeyStoreException e) {
+            saveKeyStore();
+        } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException | IOException e) {
             throw new KeyFormatException();
+        }
+    }
+
+    private void saveKeyStore() throws IOException, CertificateException, NoSuchAlgorithmException, KeyStoreException {
+        try (FileOutputStream fos = new FileOutputStream(properties.getLocation().getFile())) {
+            keyStore.store(fos, properties.getPassword().toCharArray());
         }
     }
 

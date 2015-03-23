@@ -34,7 +34,6 @@ import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import javax.naming.OperationNotSupportedException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Collections;
@@ -89,6 +88,17 @@ public class EncryptionController {
 		return new ResponseEntity<Map<String, Object>>(body, HttpStatus.CREATED);
 	}
 
+    @RequestMapping(value = "/{application}/{profile}/key", method = RequestMethod.POST, params = { "!password" })
+    public ResponseEntity<Map<String, Object>> uploadKey(@PathVariable String application,
+                                                         @PathVariable String profile,
+                                                         @RequestBody String data,
+                                                         @RequestHeader("Content-Type") MediaType type) {
+        Map<String, Object> body = new HashMap<String, Object>();
+        body.put("status", "OK");
+        uploadKey(data, application, profile);
+        return new ResponseEntity<Map<String, Object>>(body, HttpStatus.CREATED);
+    }
+
     public void uploadKey(String data, String application, String profile) {
         this.keyChain.add(EnvironmentAlias.of(application, profile), data);
     }
@@ -140,13 +150,13 @@ public class EncryptionController {
 		}
 	}
 
-    @RequestMapping(value = "/decrypt/{name}/{profiles}/", method = RequestMethod.POST)
+    @RequestMapping(value = "/decrypt/{name}/{profiles}", method = RequestMethod.POST)
     public String decrypt(@PathVariable String name, @PathVariable String profiles, @RequestBody String data,
                           @RequestHeader("Content-Type") MediaType type) {
         return textEncryptorLocator.locate(name, profiles).decrypt(data);
     }
 
-    @RequestMapping(value = "/encrypt/{name}/{profiles}/", method = RequestMethod.POST)
+    @RequestMapping(value = "/encrypt/{name}/{profiles}", method = RequestMethod.POST)
     public String encrypt(@PathVariable String name, @PathVariable String profiles, @RequestBody String data,
                           @RequestHeader("Content-Type") MediaType type) {
         return textEncryptorLocator.locate(name, profiles).encrypt(data);
