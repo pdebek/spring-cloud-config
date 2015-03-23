@@ -33,8 +33,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
-import sun.reflect.generics.reflectiveObjects.NotImplementedException;
 
+import javax.naming.OperationNotSupportedException;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.Collections;
@@ -70,22 +70,7 @@ public class EncryptionController {
 	public ResponseEntity<Map<String, Object>> uploadKeyStore(
 			@RequestParam("file") MultipartFile file,
 			@RequestParam("password") String password, @RequestParam("alias") String alias) {
-        throw new NotImplementedException();
-//		Map<String, Object> body = new HashMap<String, Object>();
-//		body.put("status", "OK");
-//
-//		try {
-//			ByteArrayResource resource = new ByteArrayResource(file.getBytes());
-//			KeyPair keyPair = new KeyStoreKeyFactory(resource, password.toCharArray())
-//					.getKeyPair(alias);
-//			textEncryptorLocator = new RsaSecretEncryptor(keyPair);
-//            body.put("publicKey", ((RsaKeyHolder) textEncryptorLocator.locate()).getPublicKey());
-//        } catch (IOException e) {
-//			throw new KeyFormatException();
-//		}
-//
-//		return new ResponseEntity<Map<String, Object>>(body, HttpStatus.CREATED);
-
+        throw new UnsupportedOperationException();
 	}
 
 	@RequestMapping(value = "/key", method = RequestMethod.POST, params = { "!password" })
