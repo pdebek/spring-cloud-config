@@ -1,7 +1,7 @@
 package org.springframework.cloud.config.server;
 
 import org.springframework.cloud.bootstrap.encrypt.KeyProperties;
-import org.springframework.cloud.config.environment.Environment;
+import org.springframework.cloud.config.encrypt.KeyFormatException;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
@@ -14,12 +14,13 @@ import java.security.cert.CertificateException;
 public class KeyChain implements IKeyChain {
 
     private KeyStore keyStore;
-    private KeyProperties keyProperties;
+    private KeyProperties.KeyStore properties;
 
     public KeyChain(KeyProperties.KeyStore properties) {
         try {
             this.keyStore = KeyStore.getInstance("JCEKS");
             keyStore.load(properties.getLocation().getInputStream(), properties.getPassword().toCharArray());
+            this.properties = properties;
         } catch (KeyStoreException | CertificateException | NoSuchAlgorithmException | IOException e) {
             e.printStackTrace();
         }
@@ -31,13 +32,13 @@ public class KeyChain implements IKeyChain {
             SecretKeySpec spec = new SecretKeySpec(key.getBytes(), "AES");
             this.keyStore.setKeyEntry(alias, spec, "password".toCharArray(), null);
         } catch (KeyStoreException e) {
-            e.printStackTrace();
+            throw new KeyFormatException();
         }
     }
 
     @Override
     public void addDefault(String key) {
-        add(keyProperties.getKeyStore().getAlias(), key);
+        add(properties.getAlias(), key);
     }
 
     @Override
@@ -52,7 +53,7 @@ public class KeyChain implements IKeyChain {
     @Override
     public String getDefault() {
         try {
-            return keyStore.getKey(keyProperties.getKeyStore().getAlias(), "password".toCharArray()).toString();
+            return keyStore.getKey(properties.getAlias(), "password".toCharArray()).toString();
         } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException e) {
             return "";
         }

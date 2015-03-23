@@ -4,7 +4,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.config.encrypt.EncryptorFactory;
 import org.springframework.cloud.config.environment.Environment;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
-import org.springframework.stereotype.Component;
+import org.springframework.util.StringUtils;
 
 public class TextEncryptorLocator {
 
@@ -26,11 +26,18 @@ public class TextEncryptorLocator {
         return locate(environment.getApplication(), environment.getName());
     }
 
+    public TextEncryptor locate(String application, String name) {
+        return locate(IKeyChain.get(EnvironmentAlias.of(application, name)));
+    }
+
     private TextEncryptor locate(String key) {
+        checkKeyNotEmpty(key);
         return encryptorFactory.create(key);
     }
 
-    public TextEncryptor locate(String application, String name) {
-        return locate(IKeyChain.get(application + "-" + name));
+    private void checkKeyNotEmpty(String key) {
+        if (StringUtils.isEmpty(key)) {
+            throw new KeyNotInstalledException();
+        }
     }
 }

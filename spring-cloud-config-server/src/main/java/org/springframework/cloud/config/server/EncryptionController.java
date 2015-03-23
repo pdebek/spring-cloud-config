@@ -22,7 +22,6 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.codec.Base64;
 import org.springframework.security.crypto.codec.Hex;
-import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.security.rsa.crypto.RsaKeyHolder;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -54,12 +53,9 @@ public class EncryptionController {
     private TextEncryptorLocator textEncryptorLocator;
 
     @Autowired
-    public void setKeyChain(IKeyChain keyChain) {
+    public EncryptionController(IKeyChain keyChain, TextEncryptorLocator textEncryptorLocator) {
         this.keyChain = keyChain;
-    }
-
-    @Autowired(required = false)
-    public void setEncryptor(TextEncryptor encryptorLocator) {
+        this.textEncryptorLocator = textEncryptorLocator;
     }
 
     @RequestMapping(value = "/key", method = RequestMethod.GET)
@@ -109,7 +105,7 @@ public class EncryptionController {
 	}
 
     public void uploadKey(String data, String application, String profile) {
-        this.keyChain.add(application + "-" + profile, data);
+        this.keyChain.add(EnvironmentAlias.of(application, profile), data);
     }
 
 	@ExceptionHandler(KeyFormatException.class)
@@ -151,9 +147,6 @@ public class EncryptionController {
 	@RequestMapping(value = "decrypt", method = RequestMethod.POST)
 	public String decrypt(@RequestBody String data,
 			@RequestHeader("Content-Type") MediaType type) {
-        if (textEncryptorLocator.locate() == null) {
-            throw new KeyNotInstalledException();
-        }
 		try {
 			data = stripFormData(data, type, true);
             return textEncryptorLocator.locate().decrypt(data);

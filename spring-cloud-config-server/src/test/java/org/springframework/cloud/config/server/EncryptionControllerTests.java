@@ -23,14 +23,15 @@ import static org.springframework.http.MediaType.TEXT_PLAIN;
 import java.security.KeyStoreException;
 import java.util.Collections;
 
+import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.cloud.bootstrap.encrypt.KeyProperties;
-import org.springframework.cloud.config.encrypt.KeyFormatException;
+import org.springframework.cloud.config.encrypt.EncryptorFactory;
 import org.springframework.cloud.config.environment.Environment;
 import org.springframework.cloud.config.environment.PropertySource;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.MediaType;
-import org.springframework.security.rsa.crypto.RsaSecretEncryptor;
 
 /**
  * @author Dave Syer
@@ -38,21 +39,30 @@ import org.springframework.security.rsa.crypto.RsaSecretEncryptor;
  */
 public class EncryptionControllerTests {
 
-	private EncryptionController controller = new EncryptionController();
+	private EncryptionController controller;
+    private EncryptorFactory encryptorFactory = new EncryptorFactory();
+    private IKeyChain emptyKeyChain = new EmptyKeyChain();
+
+    @Before
+    public void setup() {
+        KeyProperties.KeyStore properties = new KeyProperties.KeyStore();
+        properties.setLocation(new UrlResource(EncryptionControllerTests.class.getClassLoader().getResource("aes-keystore.jck")));
+        properties.setPassword("password");
+        properties.setAlias("default");
+        KeyChain keyChain = new KeyChain(properties);
+        this.controller = new EncryptionController(keyChain, new TextEncryptorLocator(encryptorFactory, keyChain));
+        controller.uploadKey("aa", MediaType.TEXT_PLAIN);
+    }
+
 
 	@Test(expected = KeyNotInstalledException.class)
 	public void cannotDecryptWithoutKey() {
-		controller.decrypt("foo", TEXT_PLAIN);
-	}
+		// given
+        TextEncryptorLocator locator = new TextEncryptorLocator(encryptorFactory, emptyKeyChain);
+        EncryptionController controller = new EncryptionController(emptyKeyChain, locator);
 
-	@Test(expected = KeyFormatException.class)
-	public void cannotUploadPublicKey() {
-		controller.uploadKey("ssh-rsa ...", TEXT_PLAIN);
-	}
-
-	@Test(expected = KeyFormatException.class)
-	public void cannotUploadPublicKeyPemFormat() {
-		controller.uploadKey("---- BEGIN RSA PUBLIC KEY ...", TEXT_PLAIN);
+        // when
+        controller.decrypt("foo", TEXT_PLAIN);
 	}
 
 	@Test(expected = InvalidCipherException.class)
@@ -62,54 +72,41 @@ public class EncryptionControllerTests {
 	}
 
 	@Test
-	public void sunnyDaySymmetricKey() {
+	public void shouldDecryptSelfEncryptedDataUsingUploadedKey() {
 		controller.uploadKey("foo", TEXT_PLAIN);
 		String cipher = controller.encrypt("foo", TEXT_PLAIN);
 		assertEquals("foo", controller.decrypt(cipher, TEXT_PLAIN));
 	}
 
 	@Test
-	public void sunnyDayRsaKey() {
-		controller.setEncryptor(new RsaSecretEncryptor());
+	public void shouldDecryptSelfEncryptedData() {
 		String cipher = controller.encrypt("foo", TEXT_PLAIN);
 		assertEquals("foo", controller.decrypt(cipher, TEXT_PLAIN));
 	}
 
-	@Test
+	@Ignore("RSA is not supported yet")
+    @Test
 	public void publicKey() {
-		controller.setEncryptor(new RsaSecretEncryptor());
 		String key = controller.getPublicKey();
 		assertTrue("Wrong key format: " + key, key.startsWith("ssh-rsa"));
 	}
 
+    @Test(expected = KeyNotAvailableException.class)
+    public void shouldReturnKeyNotAvailableIfDefaultPublicKeyIsNotInstalled() {
+        controller.getPublicKey();
+    }
+
 	@Test
 	public void formDataIn() {
-		controller.setEncryptor(new RsaSecretEncryptor());
-		// Add space to input
-		String cipher = controller.encrypt("foo bar=", MediaType.APPLICATION_FORM_URLENCODED);
-		String decrypt = controller.decrypt(cipher + "=", MediaType.APPLICATION_FORM_URLENCODED);
-		assertEquals("Wrong decrypted plaintext: " + decrypt, "foo bar", decrypt);
-	}
-
-//	@Test
-//	public void decryptEnvironment() {
-//		controller.uploadKey("foo", TEXT_PLAIN);
-//		String cipher = controller.encrypt("foo", TEXT_PLAIN);
-//		Environment environment = new Environment("foo", "bar");
-//		environment.add(new PropertySource("spam", Collections
-//				.<Object, Object> singletonMap("my", "{cipher}" + cipher)));
-//		Environment result = controller.decrypt(environment);
-//		assertEquals("foo", result.getPropertySources().get(0).getSource().get("my"));
-//	}
+        // Add space to input
+        String cipher = controller.encrypt("foo bar=", MediaType.APPLICATION_FORM_URLENCODED);
+        String decrypt = controller.decrypt(cipher + "=", MediaType.APPLICATION_FORM_URLENCODED);
+        assertEquals("Wrong decrypted plaintext: " + decrypt, "foo bar", decrypt);
+    }
 
     @Test
     public void shouldDecryptEnvironmentUsingAppropriateEncryptionKey() throws KeyStoreException {
         // given
-        KeyProperties.KeyStore properties = new KeyProperties.KeyStore();
-        properties.setLocation(new UrlResource(EncryptionControllerTests.class.getClassLoader().getResource("aes-keystore.jck")));
-        properties.setPassword("password");
-        controller.setKeyChain(new KeyChain(properties));
-
         Environment environment1 = new Environment("name1", "label1");
         controller.uploadKey("foo", environment1.getApplication(), environment1.getName());
 
