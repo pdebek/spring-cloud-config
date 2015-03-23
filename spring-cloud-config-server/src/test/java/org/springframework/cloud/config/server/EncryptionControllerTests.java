@@ -15,20 +15,21 @@
  */
 package org.springframework.cloud.config.server;
 
+import static java.util.Arrays.asList;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotEquals;
 import static org.junit.Assert.assertTrue;
 import static org.springframework.http.MediaType.TEXT_PLAIN;
 
 import java.security.KeyStoreException;
-import java.util.Collections;
+import java.util.List;
+import java.util.UUID;
 
 import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.springframework.cloud.bootstrap.encrypt.KeyProperties;
 import org.springframework.cloud.config.environment.Environment;
-import org.springframework.cloud.config.environment.PropertySource;
 import org.springframework.cloud.context.encrypt.EncryptorFactory;
 import org.springframework.core.io.UrlResource;
 import org.springframework.http.MediaType;
@@ -51,7 +52,7 @@ public class EncryptionControllerTests {
         properties.setAlias("default");
         AESKeyChain AESKeyChain = new AESKeyChain(properties);
         this.controller = new EncryptionController(AESKeyChain, new TextEncryptorLocator(encryptorFactory, AESKeyChain));
-        controller.uploadKey("aa", MediaType.TEXT_PLAIN);
+        controller.uploadKey("aa", TEXT_PLAIN);
     }
 
 
@@ -107,30 +108,27 @@ public class EncryptionControllerTests {
     @Test
     public void shouldDecryptEnvironmentUsingAppropriateEncryptionKey() throws KeyStoreException {
         // given
-        Environment environment1 = new Environment("name1", "label1");
-        controller.uploadKey("foo", environment1.getName(), environment1.getProfiles()[0]);
+        List<Environment> environments = asList(new Environment("name1", "label1"), new Environment("name2", "label2"));
+        for(Environment env : environments) {
+            controller.uploadKey(UUID.randomUUID().toString(), env.getName(), env.getProfiles()[0]);
+        }
 
-        Environment environment2 = new Environment("name2", "label2");
-        controller.uploadKey("foo", environment2.getName(), environment2.getProfiles()[0]);
+        // when & then
+        for(Environment env : environments) {
+            shouldDecryptEnvironmentUsingAppropriateEncryptionKey(env);
+        }
+    }
+
+    public void shouldDecryptEnvironmentUsingAppropriateEncryptionKey(Environment environment) throws KeyStoreException {
+        // given
+        String secret = environment.toString();
+        String profile = environment.getProfiles()[0];
 
         // when
-        String key = "secret";
-        
-        String secret1 = "secret1";
-        String encrypted1 = controller.encrypt(environment1.getName(), environment1.getProfiles()[0], secret1, MediaType.TEXT_PLAIN);
-        
-        environment1.add(new PropertySource("spam", Collections
-                .<Object, Object> singletonMap(key, "{cipher}" + encrypted1)));
-
-        String secret2 = "secret2";
-        String encrypted2 = controller.encrypt(environment2.getName(), environment2.getProfiles()[0], secret2, MediaType.TEXT_PLAIN);
-        environment2.add(new PropertySource("spam", Collections
-                .<Object, Object> singletonMap(key, "{cipher}" + encrypted2)));
-
+        String encrypted = controller.encrypt(environment.getName(), profile, secret, TEXT_PLAIN);
 
         // then
-        assertEquals(secret1, controller.decrypt(environment1.getName(), environment1.getProfiles()[0], encrypted1, MediaType.TEXT_PLAIN));
-        assertEquals(secret2, controller.decrypt(environment2.getName(), environment2.getProfiles()[0], encrypted2, MediaType.TEXT_PLAIN));
+        assertEquals(secret, controller.decrypt(environment.getName(), profile, encrypted, TEXT_PLAIN));
     }
 
 
