@@ -1,7 +1,7 @@
 package org.springframework.cloud.config.server;
 
 import org.springframework.cloud.bootstrap.encrypt.KeyProperties;
-import org.springframework.cloud.config.encrypt.KeyFormatException;
+import org.springframework.cloud.context.encrypt.KeyFormatException;
 
 import javax.crypto.spec.SecretKeySpec;
 import java.io.IOException;
@@ -52,10 +52,6 @@ public class KeyChain implements IKeyChain {
 
     @Override
     public String getDefault() {
-        try {
-            return keyStore.getKey(properties.getAlias(), "password".toCharArray()).toString();
-        } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException e) {
-            return "";
-        }
+        return get(properties.getAlias());
     }
 }

@@ -1,8 +1,8 @@
 package org.springframework.cloud.config.server;
 
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.cloud.config.encrypt.EncryptorFactory;
 import org.springframework.cloud.config.environment.Environment;
+import org.springframework.cloud.context.encrypt.EncryptorFactory;
 import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.util.StringUtils;
 
@@ -23,7 +23,7 @@ public class TextEncryptorLocator {
     }
 
     public TextEncryptor locate(Environment environment) {
-        return locate(environment.getApplication(), environment.getName());
+        return locate(environment.getName(), environment.getName());
     }
 
     public TextEncryptor locate(String application, String name) {

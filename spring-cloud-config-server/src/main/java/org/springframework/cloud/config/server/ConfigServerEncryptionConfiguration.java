@@ -6,8 +6,8 @@ import org.springframework.boot.autoconfigure.condition.ConditionalOnMissingBean
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.bootstrap.encrypt.EncryptionBootstrapConfiguration;
 import org.springframework.cloud.bootstrap.encrypt.KeyProperties;
-import org.springframework.cloud.config.encrypt.EncryptorFactory;
 import org.springframework.cloud.config.environment.Environment;
+import org.springframework.cloud.context.encrypt.EncryptorFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 
