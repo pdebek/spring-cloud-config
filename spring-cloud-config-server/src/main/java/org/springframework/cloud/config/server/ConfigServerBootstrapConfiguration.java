@@ -18,9 +18,11 @@ package org.springframework.cloud.config.server;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.cloud.config.client.ConfigClientProperties;
+import org.springframework.cloud.context.encrypt.EncryptorFactory;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
+import org.springframework.security.crypto.encrypt.TextEncryptor;
 import org.springframework.util.StringUtils;
 
 /**
@@ -56,7 +58,11 @@ public class ConfigServerBootstrapConfiguration {
 			return new EnvironmentRepositoryPropertySourceLocator(repository,
 					client.getName(), client.getProfile(), label);
 		}
-
 	}
+
+    @Bean
+    public TextEncryptor textEncryptor() {
+        return new EncryptorFactory().create("data");
+    }
 
 }
