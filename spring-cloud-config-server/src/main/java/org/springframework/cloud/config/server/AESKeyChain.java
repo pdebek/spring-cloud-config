@@ -57,7 +57,7 @@ public class AESKeyChain implements KeyChain {
     public String get(String alias) {
         try {
             Key found = keyStore.getKey(alias, properties.getPassword().toCharArray());
-            return found != null? found.toString() : "";
+            return found != null? new String(found.getEncoded()) : "";
         } catch (KeyStoreException | NoSuchAlgorithmException | UnrecoverableKeyException e) {
             throw new KeyChainException(e);
         }
